@@ -76,9 +76,9 @@ func (o *Osc) Fill(buf *audio.FloatBuffer) error {
 	if f := buf.Format; f != nil {
 		numChans = f.NumChannels
 	}
-	len := len(buf.Data)
+	fameCount := buf.NumFrames()
 	var sample float64
-	for i := 0; i < len; i++ {
+	for i := 0; i < fameCount; i++ {
 		sample = o.Sample()
 		for j := 0; j < numChans; j++ {
 			buf.Data[i+j] = sample

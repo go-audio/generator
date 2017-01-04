@@ -96,7 +96,7 @@ Note that the sound will come out of your default sound card.`)
 		}
 		transforms.Gain(buf, currentVol)
 
-		f64ToF32Copy(buf.Data, out)
+		f64ToF32Copy(out, buf.Data)
 
 		// write to the stream
 		if err := stream.Write(); err != nil {
@@ -113,11 +113,8 @@ Note that the sound will come out of your default sound card.`)
 
 // portaudio doesn't support float64 so we need to copy our data over to the
 // destination buffer.
-func f64ToF32Copy(src []float64, dst []float32) {
-	if len(src) > len(dst) {
-		dst = append(dst, make([]float32, len(src)-len(dst))...)
-	}
-	for i := 0; i < len(src); i++ {
+func f64ToF32Copy(dst []float32, src []float64) {
+	for i := range src {
 		dst[i] = float32(src[i])
 	}
 }

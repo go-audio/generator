@@ -17,10 +17,10 @@ import (
 )
 
 var (
-	freqFlag      = flag.Float64("freq", 440, "frequency to generate")
-	biteDepthFlag = flag.Int("biteDepth", 16, "bit size to use when generating the auid file")
-	durationFlag  = flag.Int("duration", 4, "duration of the generated file")
-	formatFlag    = flag.String("format", "wav", "the audio format of the output file")
+	freqFlag     = flag.Float64("freq", 440, "frequency to generate")
+	bitDepthFlag = flag.Int("bitDepth", 16, "bit size to use when generating the auid file")
+	durationFlag = flag.Int("duration", 4, "duration of the generated file")
+	formatFlag   = flag.String("format", "wav", "the audio format of the output file")
 )
 
 func main() {
@@ -29,7 +29,7 @@ func main() {
 
 	freq := *freqFlag
 	fs := 44100
-	biteDepth := *biteDepthFlag
+	biteDepth := *bitDepthFlag
 
 	osc := generator.NewOsc(generator.WaveSine, float64(freq), fs)
 	// our osc generates values from -1 to 1, we need to go back to PCM scale

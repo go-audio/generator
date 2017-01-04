@@ -20,7 +20,7 @@ func main() {
 	bufferSize := 512
 	buf := &audio.FloatBuffer{
 		Data:   make([]float64, bufferSize),
-		Format: audio.FormatMono4410016bLE,
+		Format: audio.FormatMono44100,
 	}
 	currentNote := 440.0
 	osc := generator.NewOsc(generator.WaveSine, currentNote, buf.Format.SampleRate)

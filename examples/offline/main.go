@@ -36,7 +36,7 @@ func main() {
 	factor := float64(audio.IntMaxSignedValue(biteDepth))
 	osc.Amplitude = factor
 	data := make([]float64, fs**durationFlag)
-	buf := &audio.FloatBuffer{Data: data, Format: audio.FormatMono4410016bBE}
+	buf := &audio.FloatBuffer{Data: data, Format: audio.FormatMono44100}
 	osc.Fill(buf)
 
 	// generate the sound file
@@ -65,13 +65,19 @@ func main() {
 func encode(format string, buf audio.Buffer, w io.WriteSeeker) error {
 	switch format {
 	case "wav":
-		e := wav.NewEncoder(w, buf.PCMFormat().SampleRate, buf.PCMFormat().BitDepth, buf.PCMFormat().NumChannels, 1)
+		e := wav.NewEncoder(w,
+			buf.PCMFormat().SampleRate,
+			16,
+			buf.PCMFormat().NumChannels, 1)
 		if err := e.Write(buf.AsIntBuffer()); err != nil {
 			return err
 		}
 		return e.Close()
 	case "aiff":
-		e := aiff.NewEncoder(w, buf.PCMFormat().SampleRate, buf.PCMFormat().BitDepth, buf.PCMFormat().NumChannels)
+		e := aiff.NewEncoder(w,
+			buf.PCMFormat().SampleRate,
+			16,
+			buf.PCMFormat().NumChannels)
 		if err := e.Write(buf.AsIntBuffer()); err != nil {
 			return err
 		}

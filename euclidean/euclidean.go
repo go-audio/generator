@@ -1,9 +1,15 @@
+// Euclidean package implements the Euclidean Algorithm to generate traditional
+// musical rhythms. This popular rhythm approach was defined by Godfried
+// Toussaint in 2005
+// https://en.wikipedia.org/wiki/Euclidean_rhythm
 package euclidean
 
 // Rhythm returns a rhythmical pattern of equally distributed accents throughout
-// the total steps.
-// The Euclidean rhythms are explained in this white paper:
+// the total steps. The Euclidean rhythms are explained in this white paper:
 // http://cgm.cs.mcgill.ca/~godfried/publications/banff.pdf
+// The total steps are the steps in a grid (or a circle) and the accents is the
+// number of those steps you want to be triggered. The algorithm will position
+// the accents (aka pulses) equally distributed across the available steps.
 func Rhythm(accents, totalSteps int) []bool {
 	var pattern []bool
 	if totalSteps <= 0 {

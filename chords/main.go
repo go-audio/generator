@@ -60,9 +60,15 @@ func main() {
 		progression = theory.MinorProgressions[n]
 	}
 	for _, k := range progression {
+		// testing using triad vs 7th
+		var chordType int
+		if k%2 == 0 {
+			chordType = 1
+		}
 		chordName := fmt.Sprintf("%s%s\n",
 			midi.Notes[keys[k]%12],
-			theory.ScaleChords[scale][k])
+			theory.RichScaleChords[scale][k][chordType])
+		// theory.ScaleChords[scale][k])
 		fmt.Printf("%s\t%s", theory.RomanNumerals[scale][k], chordName)
 		c := theory.NewChordFromAbbrev(chordName)
 

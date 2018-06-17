@@ -1,13 +1,9 @@
 language: go
 go:
- - 1.5.4
- - 1.6.4
- - 1.7.4
+ - 1.10
  - tip
 sudo: false
 addons:
     apt:
         packages:
             - portaudio19-dev
-env:
-  - GO15VENDOREXPERIMENT=1

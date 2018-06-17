@@ -68,7 +68,7 @@ func main() {
 		chordName := fmt.Sprintf("%s%s\n",
 			midi.Notes[keys[k]%12],
 			theory.RichScaleChords[scale][k][chordType])
-		// theory.ScaleChords[scale][k])
+
 		fmt.Printf("%s\t%s", theory.RomanNumerals[scale][k], chordName)
 		c := theory.NewChordFromAbbrev(chordName)
 

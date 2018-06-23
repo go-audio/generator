@@ -13,7 +13,7 @@ import (
 )
 
 var (
-	ppq uint32 = 99
+	ppq uint32 = 480
 )
 
 func main() {
@@ -59,7 +59,6 @@ func main() {
 		keys[i] += octaveBump
 	}
 
-	fmt.Println("Chord progression")
 	var progression []int
 	if scale == theory.MajorScale {
 		n := rand.Intn(len(theory.MajorProgressions))
@@ -70,8 +69,10 @@ func main() {
 	}
 
 	playScale(tr, root, scale)
+	fmt.Println()
 	playProgression(tr, root, scale, progression)
-	// playScaleChords(tr, root, scale)
+	fmt.Println()
+	playScaleChords(tr, root, scale)
 }
 
 func playScaleChords(tr *midi.Track, root string, scale theory.ScaleName) {
@@ -92,54 +93,62 @@ func playScaleChords(tr *midi.Track, root string, scale theory.ScaleName) {
 
 	var firstChord *theory.Chord
 
-	// play all chords in the scale
-	for i, _ := range theory.RomanNumerals[scale] {
-		chordName := fmt.Sprintf("%s%s\n",
-			midi.Notes[keys[i]%12],
-			theory.ScaleChords[scale][i])
-		fmt.Printf("%s\t%s", theory.RomanNumerals[scale][i], chordName)
-		c := theory.NewChordFromAbbrev(chordName)
-		if i == 0 {
-			firstChord = c
-		}
+	for chordTypeIDX := 0; chordTypeIDX < len(theory.RichScaleChords[scale][0]); chordTypeIDX++ {
+		fmt.Println("Chord Type", chordTypeIDX)
+		scaleChords := theory.RichScaleChords[scale]
+		// play all chords in the scale
+		for i, roman := range theory.RomanNumerals[scale] {
+			if i > len(scaleChords) || chordTypeIDX > len(scaleChords[i]) {
+				fmt.Println(roman, "not found")
+				continue
+			}
+			chordName := fmt.Sprintf("%s%s\n",
+				midi.Notes[keys[i]%12],
+				scaleChords[i][chordTypeIDX])
 
-		for i, k := range c.Keys {
-			tr.AddAfterDelta(timeBuffer, midi.NoteOn(1, k+octaveBump, 99))
+			fmt.Printf("%s\t%s", roman, chordName)
+			c := theory.NewChordFromAbbrev(chordName)
 			if i == 0 {
-				timeBuffer = 0
+				firstChord = c
+			}
+
+			for i, k := range c.Keys {
+				tr.AddAfterDelta(timeBuffer, midi.NoteOn(1, k+octaveBump, 99))
+				if i == 0 {
+					timeBuffer = 0
+				}
+			}
+			for i, k := range c.Keys {
+				if i == 0 {
+					timeBuffer = ppq * 2
+				}
+				tr.AddAfterDelta(timeBuffer, midi.NoteOff(1, k+octaveBump))
+				if i == 0 {
+					timeBuffer = 0
+				}
 			}
 		}
-		for i, k := range c.Keys {
+
+		// back to the first chord
+		for i, k := range firstChord.Keys {
 			if i == 0 {
 				timeBuffer = ppq * 2
 			}
-			tr.AddAfterDelta(timeBuffer, midi.NoteOff(1, k+octaveBump))
+			tr.AddAfterDelta(0, midi.NoteOn(1, k+24, 99))
+		}
+		for i, k := range firstChord.Keys {
+			if i == 0 {
+				timeBuffer = ppq * 2
+			}
+			tr.AddAfterDelta(timeBuffer, midi.NoteOff(1, k+24))
 			if i == 0 {
 				timeBuffer = 0
 			}
-		}
-	}
-
-	// back to the first chord
-	for i, k := range firstChord.Keys {
-		if i == 0 {
-			timeBuffer = ppq * 2
-		}
-		tr.AddAfterDelta(0, midi.NoteOn(1, k+24, 99))
-	}
-	for i, k := range firstChord.Keys {
-		if i == 0 {
-			timeBuffer = ppq * 2
-		}
-		tr.AddAfterDelta(timeBuffer, midi.NoteOff(1, k+24))
-		if i == 0 {
-			timeBuffer = 0
 		}
 	}
 }
 
 func playScale(tr *midi.Track, root string, scale theory.ScaleName) {
-	fmt.Printf("Playing scale %s %s\n", root, scale)
 	keys, _ := theory.ScaleNotes(root, scale)
 	octaveBump := 12 * 4
 
@@ -173,6 +182,7 @@ func playProgression(tr *midi.Track, root string, scale theory.ScaleName, progre
 	repeatedChords := func(rate uint32) func() {
 		return func() {
 			repeats := int((ppq / rate) * 2)
+			timeBuffer = 0
 			for n := 0; n < repeats; n++ {
 				// note on
 				for i, k := range c.Keys {
@@ -199,6 +209,7 @@ func playProgression(tr *midi.Track, root string, scale theory.ScaleName, progre
 	downUp := func(rate uint32) func() {
 		return func() {
 			repeats := int((ppq / rate) * 4)
+			timeBuffer = 0
 			for n := 0; n < repeats; n++ {
 				bump := octaveBump + ((n % 2) * 12)
 				// note on
@@ -238,7 +249,8 @@ func playProgression(tr *midi.Track, root string, scale theory.ScaleName, progre
 		downUp(ppq),
 		downUp(ppq / 2)}
 
-	for _, fn := range arps {
+	fmt.Println("Chord progression:")
+	for i, fn := range arps {
 		for _, k := range progression {
 			// testing using triad vs 7th
 			var chordType int
@@ -249,7 +261,9 @@ func playProgression(tr *midi.Track, root string, scale theory.ScaleName, progre
 				midi.Notes[keys[k]%12],
 				theory.RichScaleChords[scale][k][chordType])
 
-			fmt.Printf("%s\t%s", theory.RomanNumerals[scale][k], chordName)
+			if i == 0 {
+				fmt.Printf("%s\t%s", theory.RomanNumerals[scale][k], chordName)
+			}
 			c = theory.NewChordFromAbbrev(chordName)
 			if c == nil {
 				fmt.Println("Couldn't find chord", chordName)

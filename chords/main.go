@@ -9,6 +9,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-audio/generator/euclidean"
+
 	"github.com/go-audio/music/theory"
 
 	"github.com/go-audio/midi"
@@ -62,7 +64,6 @@ func main() {
 		rootInt = rand.Intn(12)
 	}
 
-	// Play the scale notes
 	root := midi.Notes[rootInt]
 	scaleName := fmt.Sprintf("%s %s scale", root, scale)
 	fmt.Println(scaleName)
@@ -70,7 +71,7 @@ func main() {
 	fmt.Println("Notes in scale:", notes)
 	tr.SetName(fmt.Sprintf("%s %v", scaleName, notes))
 	octaveBump := 12 * (*flagOctave + 1)
-	// move to the 3rd octave
+	// move to the target octave
 	for i := 0; i < len(keys); i++ {
 		keys[i] += octaveBump
 	}
@@ -89,6 +90,57 @@ func main() {
 	playProgression(tr, root, scale, progression)
 	fmt.Println()
 	playScaleChords(tr, root, scale)
+	euclideanImprov(tr, root, keys)
+}
+
+func euclideanImprov(tr *midi.Track, root string, keys []int) {
+	var (
+		isAPressed  bool
+		isBPressed  bool
+		wasAPressed bool
+		wasBPressed bool
+	)
+
+	var key int
+	key = midi.KeyInt(root, 3)
+	key2 := keys[rand.Intn(len(keys))]
+	// let's play 4 bars
+	for i := 0; i < 4; i++ {
+		beatsA := euclidean.Rhythm(rand.Intn(16), 16)
+		beatsB := euclidean.Rhythm(rand.Intn(16), 16)
+		var delta uint32
+		for i, on := range beatsA {
+			wasAPressed = isAPressed
+			wasBPressed = isBPressed
+			isAPressed = false
+			isBPressed = false
+			if on {
+				isAPressed = true
+				tr.AddAfterDelta(delta, midi.NoteOn(1, key, 99))
+				delta = 0
+			}
+			if beatsB[i] {
+				isBPressed = true
+				tr.AddAfterDelta(delta, midi.NoteOn(1, key2, 99))
+				delta = 0
+			}
+
+			if wasAPressed && !isAPressed {
+				tr.AddAfterDelta(delta, midi.NoteOff(1, key))
+				delta = 0
+			}
+			if wasBPressed && !isBPressed {
+				tr.AddAfterDelta(delta, midi.NoteOff(1, key2))
+				delta = 0
+			}
+			if isAPressed || isBPressed || wasAPressed || wasBPressed {
+				delta = ppq / 4
+				continue
+			}
+
+			delta += ppq / 4
+		}
+	}
 }
 
 func playScaleChords(tr *midi.Track, root string, scale theory.ScaleName) {

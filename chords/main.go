@@ -1,10 +1,12 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/go-audio/music/theory"
@@ -13,10 +15,15 @@ import (
 )
 
 var (
-	ppq uint32 = 480
+	ppq          uint32 = 480
+	flagFromFreq        = flag.Float64("freq", 0, "Use this frequency as the root of the generated data")
+	flagFromNote        = flag.String("root", "", "Root note to use")
+	flagOctave          = flag.Int("octave", 3, "Default octave to start from")
+	flagIsMinor         = flag.Bool("minor", false, "should we use a minor scale")
 )
 
 func main() {
+	flag.Parse()
 	f, err := os.Create("output.mid")
 	if err != nil {
 		log.Fatal(err)
@@ -38,13 +45,22 @@ func main() {
 
 	// generate a chord progression
 	// scale
-	scale := theory.MajorScale
-	// if t := time.Now().Nanosecond() % 2; t == 0 {
-	// 	scale = theory.MelodicMinorScale
-	// }
+	var scale theory.ScaleName
+	if *flagIsMinor {
+		scale = theory.MelodicMinorScale
+	} else {
+		scale = theory.MajorScale
+	}
 
-	// random root
-	rootInt := rand.Intn(12)
+	var rootInt int
+	if *flagFromNote != "" {
+		rootInt = midi.NotesToInt[strings.ToUpper(*flagFromNote)]
+	} else if *flagFromFreq != 0 {
+		rootInt = midi.FreqToNote(*flagFromFreq)
+	} else {
+		// random root
+		rootInt = rand.Intn(12)
+	}
 
 	// Play the scale notes
 	root := midi.Notes[rootInt]
@@ -53,7 +69,7 @@ func main() {
 	keys, notes := theory.ScaleNotes(root, scale)
 	fmt.Println("Notes in scale:", notes)
 	tr.SetName(fmt.Sprintf("%s %v", scaleName, notes))
-	octaveBump := 12 * 4
+	octaveBump := 12 * (*flagOctave + 1)
 	// move to the 3rd octave
 	for i := 0; i < len(keys); i++ {
 		keys[i] += octaveBump
@@ -68,8 +84,8 @@ func main() {
 		progression = theory.MinorProgressions[n]
 	}
 
-	playScale(tr, root, scale)
-	fmt.Println()
+	// playScale(tr, root, scale)
+	// fmt.Println()
 	playProgression(tr, root, scale, progression)
 	fmt.Println()
 	playScaleChords(tr, root, scale)
@@ -110,6 +126,10 @@ func playScaleChords(tr *midi.Track, root string, scale theory.ScaleName) {
 			c := theory.NewChordFromAbbrev(chordName)
 			if i == 0 {
 				firstChord = c
+			}
+			if c == nil {
+				fmt.Println("failed to find chord named", chordName)
+				continue
 			}
 
 			for i, k := range c.Keys {

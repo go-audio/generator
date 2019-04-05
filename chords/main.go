@@ -1,5 +1,7 @@
 package main
 
+// this generator example outputs a MIDI file using generated chords.
+
 import (
 	"flag"
 	"fmt"
@@ -10,10 +12,8 @@ import (
 	"time"
 
 	"github.com/go-audio/generator/euclidean"
-
-	"github.com/go-audio/music/theory"
-
 	"github.com/go-audio/midi"
+	"github.com/go-audio/music/theory"
 )
 
 var (
@@ -43,13 +43,15 @@ func main() {
 			log.Fatal(err)
 		}
 		f.Close()
+		fmt.Println("output.mid generated for you")
 	}()
 
 	// generate a chord progression
+
 	// scale
 	var scale theory.ScaleName
 	if *flagIsMinor {
-		scale = theory.MelodicMinorScale
+		scale = theory.NaturalMinorScale
 	} else {
 		scale = theory.MajorScale
 	}
@@ -60,6 +62,7 @@ func main() {
 	} else if *flagFromFreq != 0 {
 		rootInt = midi.FreqToNote(*flagFromFreq)
 	} else {
+		fmt.Println("You didn't pass a key root so we are picking up random one on your behalf.")
 		// random root
 		rootInt = rand.Intn(12)
 	}
@@ -85,12 +88,13 @@ func main() {
 		progression = theory.MinorProgressions[n]
 	}
 
-	// playScale(tr, root, scale)
-	// fmt.Println()
+	// TODO: also write to own file
+	playScale(tr, root, scale)
+	fmt.Println()
 	playProgression(tr, root, scale, progression)
 	fmt.Println()
 	playScaleChords(tr, root, scale)
-	euclideanImprov(tr, root, keys)
+	// euclideanImprov(tr, root, keys)
 }
 
 func euclideanImprov(tr *midi.Track, root string, keys []int) {
@@ -161,9 +165,9 @@ func playScaleChords(tr *midi.Track, root string, scale theory.ScaleName) {
 
 	var firstChord *theory.Chord
 
-	for chordTypeIDX := 0; chordTypeIDX < len(theory.RichScaleChords[scale][0]); chordTypeIDX++ {
+	for chordTypeIDX := 0; chordTypeIDX < len(theory.ScaleChords[scale][0]); chordTypeIDX++ {
 		fmt.Println("Chord Type", chordTypeIDX)
-		scaleChords := theory.RichScaleChords[scale]
+		scaleChords := theory.ScaleChords[scale]
 		// play all chords in the scale
 		for i, roman := range theory.RomanNumerals[scale] {
 			if i > len(scaleChords) || chordTypeIDX > len(scaleChords[i]) {
@@ -331,7 +335,7 @@ func playProgression(tr *midi.Track, root string, scale theory.ScaleName, progre
 			}
 			chordName := fmt.Sprintf("%s%s\n",
 				midi.Notes[keys[k]%12],
-				theory.RichScaleChords[scale][k][chordType])
+				theory.ScaleChords[scale][k][chordType])
 
 			if i == 0 {
 				fmt.Printf("%s\t%s", theory.RomanNumerals[scale][k], chordName)
